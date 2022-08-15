@@ -86,7 +86,7 @@
     "it-pushable": "^3.0.0",
     "multiformats": "^9.6.4",
     "protobufjs": "^6.11.2",
-    "protons-runtime": "^1.0.4",
+    "protons-runtime": "^3.1.0",
     "uint8arraylist": "^2.3.2",
     "uint8arrays": "^3.0.0"
   },
@@ -124,7 +124,7 @@
     "p-wait-for": "^5.0.0",
     "prettier": "^2.0.5",
     "promisify-es6": "^1.0.3",
-    "protons": "^3.0.4",
+    "protons": "^5.1.0",
     "sinon": "^11.1.1",
     "time-cache": "^0.3.0",
     "ts-node": "^10.7.0",

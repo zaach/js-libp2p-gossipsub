@@ -1,7 +1,8 @@
 /* eslint-disable import/export */
 /* eslint-disable @typescript-eslint/no-namespace */
 
-import { encodeMessage, decodeMessage, message, bool, string, bytes, uint64 } from 'protons-runtime'
+import { encodeMessage, decodeMessage, message } from 'protons-runtime'
+import type { Uint8ArrayList } from 'uint8arraylist'
 import type { Codec } from 'protons-runtime'
 
 export interface RPC {
@@ -17,18 +18,61 @@ export namespace RPC {
   }
 
   export namespace SubOpts {
+    let _codec: Codec<SubOpts>
+
     export const codec = (): Codec<SubOpts> => {
-      return message<SubOpts>({
-        1: { name: 'subscribe', codec: bool, optional: true },
-        2: { name: 'topic', codec: string, optional: true }
-      })
+      if (_codec == null) {
+        _codec = message<SubOpts>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.subscribe != null) {
+            writer.uint32(8)
+            writer.bool(obj.subscribe)
+          }
+
+          if (obj.topic != null) {
+            writer.uint32(18)
+            writer.string(obj.topic)
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {}
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.subscribe = reader.bool()
+                break
+              case 2:
+                obj.topic = reader.string()
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: SubOpts): Uint8Array => {
       return encodeMessage(obj, SubOpts.codec())
     }
 
-    export const decode = (buf: Uint8Array): SubOpts => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): SubOpts => {
       return decodeMessage(buf, SubOpts.codec())
     }
   }
@@ -43,22 +87,101 @@ export namespace RPC {
   }
 
   export namespace Message {
+    let _codec: Codec<Message>
+
     export const codec = (): Codec<Message> => {
-      return message<Message>({
-        1: { name: 'from', codec: bytes, optional: true },
-        2: { name: 'data', codec: bytes, optional: true },
-        3: { name: 'seqno', codec: bytes, optional: true },
-        4: { name: 'topic', codec: string },
-        5: { name: 'signature', codec: bytes, optional: true },
-        6: { name: 'key', codec: bytes, optional: true }
-      })
+      if (_codec == null) {
+        _codec = message<Message>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.from != null) {
+            writer.uint32(10)
+            writer.bytes(obj.from)
+          }
+
+          if (obj.data != null) {
+            writer.uint32(18)
+            writer.bytes(obj.data)
+          }
+
+          if (obj.seqno != null) {
+            writer.uint32(26)
+            writer.bytes(obj.seqno)
+          }
+
+          if (obj.topic != null) {
+            writer.uint32(34)
+            writer.string(obj.topic)
+          } else {
+            throw new Error('Protocol error: required field "topic" was not found in object')
+          }
+
+          if (obj.signature != null) {
+            writer.uint32(42)
+            writer.bytes(obj.signature)
+          }
+
+          if (obj.key != null) {
+            writer.uint32(50)
+            writer.bytes(obj.key)
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {
+            topic: ''
+          }
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.from = reader.bytes()
+                break
+              case 2:
+                obj.data = reader.bytes()
+                break
+              case 3:
+                obj.seqno = reader.bytes()
+                break
+              case 4:
+                obj.topic = reader.string()
+                break
+              case 5:
+                obj.signature = reader.bytes()
+                break
+              case 6:
+                obj.key = reader.bytes()
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          if (obj.topic == null) {
+            throw new Error('Protocol error: value for required field "topic" was not found in protobuf')
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: Message): Uint8Array => {
       return encodeMessage(obj, Message.codec())
     }
 
-    export const decode = (buf: Uint8Array): Message => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): Message => {
       return decodeMessage(buf, Message.codec())
     }
   }
@@ -71,20 +194,98 @@ export namespace RPC {
   }
 
   export namespace ControlMessage {
+    let _codec: Codec<ControlMessage>
+
     export const codec = (): Codec<ControlMessage> => {
-      return message<ControlMessage>({
-        1: { name: 'ihave', codec: RPC.ControlIHave.codec(), repeats: true },
-        2: { name: 'iwant', codec: RPC.ControlIWant.codec(), repeats: true },
-        3: { name: 'graft', codec: RPC.ControlGraft.codec(), repeats: true },
-        4: { name: 'prune', codec: RPC.ControlPrune.codec(), repeats: true }
-      })
+      if (_codec == null) {
+        _codec = message<ControlMessage>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.ihave != null) {
+            for (const value of obj.ihave) {
+              writer.uint32(10)
+              RPC.ControlIHave.codec().encode(value, writer)
+            }
+          } else {
+            throw new Error('Protocol error: required field "ihave" was not found in object')
+          }
+
+          if (obj.iwant != null) {
+            for (const value of obj.iwant) {
+              writer.uint32(18)
+              RPC.ControlIWant.codec().encode(value, writer)
+            }
+          } else {
+            throw new Error('Protocol error: required field "iwant" was not found in object')
+          }
+
+          if (obj.graft != null) {
+            for (const value of obj.graft) {
+              writer.uint32(26)
+              RPC.ControlGraft.codec().encode(value, writer)
+            }
+          } else {
+            throw new Error('Protocol error: required field "graft" was not found in object')
+          }
+
+          if (obj.prune != null) {
+            for (const value of obj.prune) {
+              writer.uint32(34)
+              RPC.ControlPrune.codec().encode(value, writer)
+            }
+          } else {
+            throw new Error('Protocol error: required field "prune" was not found in object')
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {
+            ihave: [],
+            iwant: [],
+            graft: [],
+            prune: []
+          }
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.ihave.push(RPC.ControlIHave.codec().decode(reader, reader.uint32()))
+                break
+              case 2:
+                obj.iwant.push(RPC.ControlIWant.codec().decode(reader, reader.uint32()))
+                break
+              case 3:
+                obj.graft.push(RPC.ControlGraft.codec().decode(reader, reader.uint32()))
+                break
+              case 4:
+                obj.prune.push(RPC.ControlPrune.codec().decode(reader, reader.uint32()))
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: ControlMessage): Uint8Array => {
       return encodeMessage(obj, ControlMessage.codec())
     }
 
-    export const decode = (buf: Uint8Array): ControlMessage => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): ControlMessage => {
       return decodeMessage(buf, ControlMessage.codec())
     }
   }
@@ -95,18 +296,67 @@ export namespace RPC {
   }
 
   export namespace ControlIHave {
+    let _codec: Codec<ControlIHave>
+
     export const codec = (): Codec<ControlIHave> => {
-      return message<ControlIHave>({
-        1: { name: 'topicID', codec: string, optional: true },
-        2: { name: 'messageIDs', codec: bytes, repeats: true }
-      })
+      if (_codec == null) {
+        _codec = message<ControlIHave>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.topicID != null) {
+            writer.uint32(10)
+            writer.string(obj.topicID)
+          }
+
+          if (obj.messageIDs != null) {
+            for (const value of obj.messageIDs) {
+              writer.uint32(18)
+              writer.bytes(value)
+            }
+          } else {
+            throw new Error('Protocol error: required field "messageIDs" was not found in object')
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {
+            messageIDs: []
+          }
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.topicID = reader.string()
+                break
+              case 2:
+                obj.messageIDs.push(reader.bytes())
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: ControlIHave): Uint8Array => {
       return encodeMessage(obj, ControlIHave.codec())
     }
 
-    export const decode = (buf: Uint8Array): ControlIHave => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): ControlIHave => {
       return decodeMessage(buf, ControlIHave.codec())
     }
   }
@@ -116,17 +366,59 @@ export namespace RPC {
   }
 
   export namespace ControlIWant {
+    let _codec: Codec<ControlIWant>
+
     export const codec = (): Codec<ControlIWant> => {
-      return message<ControlIWant>({
-        1: { name: 'messageIDs', codec: bytes, repeats: true }
-      })
+      if (_codec == null) {
+        _codec = message<ControlIWant>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.messageIDs != null) {
+            for (const value of obj.messageIDs) {
+              writer.uint32(10)
+              writer.bytes(value)
+            }
+          } else {
+            throw new Error('Protocol error: required field "messageIDs" was not found in object')
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {
+            messageIDs: []
+          }
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.messageIDs.push(reader.bytes())
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: ControlIWant): Uint8Array => {
       return encodeMessage(obj, ControlIWant.codec())
     }
 
-    export const decode = (buf: Uint8Array): ControlIWant => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): ControlIWant => {
       return decodeMessage(buf, ControlIWant.codec())
     }
   }
@@ -136,17 +428,53 @@ export namespace RPC {
   }
 
   export namespace ControlGraft {
+    let _codec: Codec<ControlGraft>
+
     export const codec = (): Codec<ControlGraft> => {
-      return message<ControlGraft>({
-        1: { name: 'topicID', codec: string, optional: true }
-      })
+      if (_codec == null) {
+        _codec = message<ControlGraft>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.topicID != null) {
+            writer.uint32(10)
+            writer.string(obj.topicID)
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {}
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.topicID = reader.string()
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: ControlGraft): Uint8Array => {
       return encodeMessage(obj, ControlGraft.codec())
     }
 
-    export const decode = (buf: Uint8Array): ControlGraft => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): ControlGraft => {
       return decodeMessage(buf, ControlGraft.codec())
     }
   }
@@ -158,19 +486,75 @@ export namespace RPC {
   }
 
   export namespace ControlPrune {
+    let _codec: Codec<ControlPrune>
+
     export const codec = (): Codec<ControlPrune> => {
-      return message<ControlPrune>({
-        1: { name: 'topicID', codec: string, optional: true },
-        2: { name: 'peers', codec: RPC.PeerInfo.codec(), repeats: true },
-        3: { name: 'backoff', codec: uint64, optional: true }
-      })
+      if (_codec == null) {
+        _codec = message<ControlPrune>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.topicID != null) {
+            writer.uint32(10)
+            writer.string(obj.topicID)
+          }
+
+          if (obj.peers != null) {
+            for (const value of obj.peers) {
+              writer.uint32(18)
+              RPC.PeerInfo.codec().encode(value, writer)
+            }
+          } else {
+            throw new Error('Protocol error: required field "peers" was not found in object')
+          }
+
+          if (obj.backoff != null) {
+            writer.uint32(24)
+            writer.uint64(obj.backoff)
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {
+            peers: []
+          }
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.topicID = reader.string()
+                break
+              case 2:
+                obj.peers.push(RPC.PeerInfo.codec().decode(reader, reader.uint32()))
+                break
+              case 3:
+                obj.backoff = reader.uint64()
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: ControlPrune): Uint8Array => {
       return encodeMessage(obj, ControlPrune.codec())
     }
 
-    export const decode = (buf: Uint8Array): ControlPrune => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): ControlPrune => {
       return decodeMessage(buf, ControlPrune.codec())
     }
   }
@@ -181,35 +565,139 @@ export namespace RPC {
   }
 
   export namespace PeerInfo {
+    let _codec: Codec<PeerInfo>
+
     export const codec = (): Codec<PeerInfo> => {
-      return message<PeerInfo>({
-        1: { name: 'peerID', codec: bytes, optional: true },
-        2: { name: 'signedPeerRecord', codec: bytes, optional: true }
-      })
+      if (_codec == null) {
+        _codec = message<PeerInfo>((obj, writer, opts = {}) => {
+          if (opts.lengthDelimited !== false) {
+            writer.fork()
+          }
+
+          if (obj.peerID != null) {
+            writer.uint32(10)
+            writer.bytes(obj.peerID)
+          }
+
+          if (obj.signedPeerRecord != null) {
+            writer.uint32(18)
+            writer.bytes(obj.signedPeerRecord)
+          }
+
+          if (opts.lengthDelimited !== false) {
+            writer.ldelim()
+          }
+        }, (reader, length) => {
+          const obj: any = {}
+
+          const end = length == null ? reader.len : reader.pos + length
+
+          while (reader.pos < end) {
+            const tag = reader.uint32()
+
+            switch (tag >>> 3) {
+              case 1:
+                obj.peerID = reader.bytes()
+                break
+              case 2:
+                obj.signedPeerRecord = reader.bytes()
+                break
+              default:
+                reader.skipType(tag & 7)
+                break
+            }
+          }
+
+          return obj
+        })
+      }
+
+      return _codec
     }
 
     export const encode = (obj: PeerInfo): Uint8Array => {
       return encodeMessage(obj, PeerInfo.codec())
     }
 
-    export const decode = (buf: Uint8Array): PeerInfo => {
+    export const decode = (buf: Uint8Array | Uint8ArrayList): PeerInfo => {
       return decodeMessage(buf, PeerInfo.codec())
     }
   }
 
+  let _codec: Codec<RPC>
+
   export const codec = (): Codec<RPC> => {
-    return message<RPC>({
-      1: { name: 'subscriptions', codec: RPC.SubOpts.codec(), repeats: true },
-      2: { name: 'messages', codec: RPC.Message.codec(), repeats: true },
-      3: { name: 'control', codec: RPC.ControlMessage.codec(), optional: true }
-    })
+    if (_codec == null) {
+      _codec = message<RPC>((obj, writer, opts = {}) => {
+        if (opts.lengthDelimited !== false) {
+          writer.fork()
+        }
+
+        if (obj.subscriptions != null) {
+          for (const value of obj.subscriptions) {
+            writer.uint32(10)
+            RPC.SubOpts.codec().encode(value, writer)
+          }
+        } else {
+          throw new Error('Protocol error: required field "subscriptions" was not found in object')
+        }
+
+        if (obj.messages != null) {
+          for (const value of obj.messages) {
+            writer.uint32(18)
+            RPC.Message.codec().encode(value, writer)
+          }
+        } else {
+          throw new Error('Protocol error: required field "messages" was not found in object')
+        }
+
+        if (obj.control != null) {
+          writer.uint32(26)
+          RPC.ControlMessage.codec().encode(obj.control, writer)
+        }
+
+        if (opts.lengthDelimited !== false) {
+          writer.ldelim()
+        }
+      }, (reader, length) => {
+        const obj: any = {
+          subscriptions: [],
+          messages: []
+        }
+
+        const end = length == null ? reader.len : reader.pos + length
+
+        while (reader.pos < end) {
+          const tag = reader.uint32()
+
+          switch (tag >>> 3) {
+            case 1:
+              obj.subscriptions.push(RPC.SubOpts.codec().decode(reader, reader.uint32()))
+              break
+            case 2:
+              obj.messages.push(RPC.Message.codec().decode(reader, reader.uint32()))
+              break
+            case 3:
+              obj.control = RPC.ControlMessage.codec().decode(reader, reader.uint32())
+              break
+            default:
+              reader.skipType(tag & 7)
+              break
+          }
+        }
+
+        return obj
+      })
+    }
+
+    return _codec
   }
 
   export const encode = (obj: RPC): Uint8Array => {
     return encodeMessage(obj, RPC.codec())
   }
 
-  export const decode = (buf: Uint8Array): RPC => {
+  export const decode = (buf: Uint8Array | Uint8ArrayList): RPC => {
     return decodeMessage(buf, RPC.codec())
   }
 }
