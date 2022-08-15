@@ -5,7 +5,6 @@
     "noImplicitReturns": true,
     "outDir": "dist",
     "useUnknownInCatchVariables": true,
-    "checkJs": false
   },
   "include": [
     "src",
